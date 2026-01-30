@@ -27,3 +27,11 @@ dist/
 # Audio cache (generated TTS files)
 frontend/assets/audio/*.mp3
 !frontend/assets/audio/.gitkeep
+
+# Database files (user data)
+backend/db/*.json
+!backend/db/.gitkeep
+
+# Generated audio files (large, can regenerate)
+frontend/audio/*.mp3
+!frontend/audio/.gitkeep

@@ -1,145 +1,128 @@
 const express = require('express');
-const OpenAI = require('openai');
 const { getDb, getNextId } = require('../db/init');
 const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
-let openai;
-if (process.env.OPENAI_API_KEY) {
-  openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-}
-
-// Grade a fill-in-the-blank answer using AI
-async function gradeWithAI(question, correctAnswer, userAnswer) {
-  if (!openai) {
-    // Fallback to simple string matching if no API key
-    return userAnswer.toLowerCase().trim() === correctAnswer.toLowerCase().trim();
-  }
-
-  try {
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'system',
-          content: `You are a chemistry teacher grading student answers. Be lenient with minor spelling errors, different but correct formats (e.g., "NaCl" vs "Sodium Chloride"), and accept scientifically equivalent answers. Respond with only "CORRECT" or "INCORRECT".`
-        },
-        {
-          role: 'user',
-          content: `Question: ${question}\nExpected Answer: ${correctAnswer}\nStudent Answer: ${userAnswer}\n\nIs the student's answer correct?`
-        }
-      ],
-      max_tokens: 10,
-      temperature: 0
-    });
-
-    const result = response.choices[0].message.content.trim().toUpperCase();
-    return result === 'CORRECT';
-  } catch (error) {
-    console.error('AI grading error:', error);
-    return userAnswer.toLowerCase().trim() === correctAnswer.toLowerCase().trim();
-  }
-}
-
-// Submit quiz answers
+// Submit quiz answers and get results
 router.post('/submit', authenticateToken, async (req, res) => {
-  const { moduleId, answers } = req.body;
+  try {
+    const { moduleId, answers } = req.body;
 
-  if (!moduleId || !answers || !Array.isArray(answers)) {
-    return res.status(400).json({ error: 'moduleId and answers array required' });
-  }
-
-  let correctCount = 0;
-  const results = [];
-
-  for (const answer of answers) {
-    let isCorrect = false;
-
-    if (answer.type === 'multiple-choice') {
-      isCorrect = answer.userAnswer === answer.correctAnswer;
-    } else if (answer.type === 'multi-select') {
-      // For multi-select, check if arrays match (order doesn't matter)
-      const userAnswers = Array.isArray(answer.userAnswer) ? answer.userAnswer.sort() : [];
-      const correctAnswers = Array.isArray(answer.correctAnswer) ? answer.correctAnswer.sort() : [];
-      isCorrect = JSON.stringify(userAnswers) === JSON.stringify(correctAnswers);
-    } else if (answer.type === 'fill-in-blank') {
-      isCorrect = await gradeWithAI(answer.question, answer.correctAnswer, answer.userAnswer);
+    if (!moduleId || !answers) {
+      return res.status(400).json({ error: 'moduleId and answers required' });
     }
 
-    if (isCorrect) correctCount++;
+    let correctCount = 0;
+    const totalQuestions = answers.length;
 
-    results.push({
-      questionId: answer.questionId,
-      correct: isCorrect,
-      userAnswer: answer.userAnswer,
-      correctAnswer: answer.correctAnswer
+    // Grade each answer
+    answers.forEach(answer => {
+      const { type, correctAnswer, userAnswer } = answer;
+
+      if (type === 'multi-select') {
+        // For multi-select, check if arrays match (order doesn't matter)
+        const correct = Array.isArray(correctAnswer) ? correctAnswer.sort() : [];
+        const user = Array.isArray(userAnswer) ? userAnswer.sort() : [];
+        if (JSON.stringify(correct) === JSON.stringify(user)) {
+          correctCount++;
+        }
+      } else if (type === 'fill-in-blank') {
+        // Case-insensitive comparison, trim whitespace
+        const correct = String(correctAnswer).toLowerCase().trim();
+        const user = String(userAnswer || '').toLowerCase().trim();
+        if (correct === user) {
+          correctCount++;
+        }
+      } else {
+        // Multiple choice - exact match
+        if (correctAnswer === userAnswer) {
+          correctCount++;
+        }
+      }
     });
-  }
 
-  const score = Math.round((correctCount / answers.length) * 100);
+    const score = Math.round((correctCount / totalQuestions) * 100);
+    const passed = score >= 70;
 
-  // Save attempt
-  const db = getDb();
-  db.data.quizAttempts.push({
-    id: getNextId('quizAttempts'),
-    user_id: req.user.id,
-    module_id: moduleId,
-    answers: JSON.stringify(results),
-    score,
-    total_questions: answers.length,
-    attempted_at: new Date().toISOString()
-  });
-
-  // Update progress if passed (>= 70%)
-  if (score >= 70) {
-    const existing = db.data.progress.find(
-      p => p.user_id === req.user.id && p.module_id === moduleId && p.section_type === 'quiz'
-    );
-
-    if (existing) {
-      existing.completed = true;
-      existing.score = Math.max(existing.score || 0, score);
-      existing.completed_at = new Date().toISOString();
-    } else {
-      db.data.progress.push({
-        id: getNextId('progress'),
-        user_id: req.user.id,
-        module_id: moduleId,
-        section_type: 'quiz',
-        completed: true,
-        score,
-        completed_at: new Date().toISOString()
-      });
+    // Record the attempt
+    const db = getDb();
+    if (!db.data.quizAttempts) {
+      db.data.quizAttempts = [];
     }
+
+    db.data.quizAttempts.push({
+      id: getNextId('quizAttempts'),
+      user_id: req.user.id,
+      module_id: moduleId,
+      score,
+      passed,
+      total_questions: totalQuestions,
+      correct_count: correctCount,
+      attempted_at: new Date().toISOString()
+    });
+
+    // Update progress if passed
+    if (passed) {
+      if (!db.data.progress) {
+        db.data.progress = [];
+      }
+
+      const existing = db.data.progress.find(
+        p => p.user_id === req.user.id && p.module_id === moduleId && p.section_type === 'quiz'
+      );
+
+      if (existing) {
+        existing.completed = true;
+        existing.score = Math.max(existing.score || 0, score);
+        existing.completed_at = new Date().toISOString();
+      } else {
+        db.data.progress.push({
+          id: getNextId('progress'),
+          user_id: req.user.id,
+          module_id: moduleId,
+          section_type: 'quiz',
+          completed: true,
+          score,
+          completed_at: new Date().toISOString()
+        });
+      }
+    }
+
+    await db.write();
+
+    res.json({
+      score,
+      passed,
+      correctCount,
+      totalQuestions,
+      message: passed ? 'Congratulations! You passed!' : 'Keep practicing!'
+    });
+  } catch (error) {
+    console.error('Error submitting quiz:', error);
+    res.status(500).json({ error: 'Failed to submit quiz' });
   }
-
-  await db.write();
-
-  res.json({
-    score,
-    correctCount,
-    totalQuestions: answers.length,
-    passed: score >= 70,
-    results
-  });
 });
 
-// Get quiz history
+// Get quiz history for a module
 router.get('/history/:moduleId', authenticateToken, (req, res) => {
-  const db = getDb();
-  const attempts = db.data.quizAttempts
-    .filter(a => a.user_id === req.user.id && a.module_id === req.params.moduleId)
-    .sort((a, b) => new Date(b.attempted_at) - new Date(a.attempted_at))
-    .slice(0, 10)
-    .map(a => ({
-      id: a.id,
-      score: a.score,
-      total_questions: a.total_questions,
-      attempted_at: a.attempted_at
-    }));
+  try {
+    const { moduleId } = req.params;
+    const db = getDb();
 
-  res.json(attempts);
+    const attempts = (db.data.quizAttempts || [])
+      .filter(a => a.user_id === req.user.id && a.module_id === moduleId)
+      .sort((a, b) => new Date(b.attempted_at) - new Date(a.attempted_at));
+
+    res.json({
+      attempts,
+      bestScore: attempts.length > 0 ? Math.max(...attempts.map(a => a.score)) : 0,
+      totalAttempts: attempts.length
+    });
+  } catch (error) {
+    console.error('Error fetching quiz history:', error);
+    res.status(500).json({ error: 'Failed to fetch history' });
+  }
 });
 
 module.exports = router;

@@ -1,0 +1,24 @@
+{
+  "quiz": [
+    { "id": "q1", "type": "multiple-choice", "question": "A substance with density 0.7 g/mL will ___ in water", "options": ["float", "sink", "dissolve", "evaporate"], "correctAnswer": "float" },
+    { "id": "q2", "type": "multiple-choice", "question": "To find volume of an irregular solid, use:", "options": ["A ruler", "Water displacement", "A scale", "Estimation"], "correctAnswer": "Water displacement" },
+    { "id": "q3", "type": "multiple-choice", "question": "When reading a graduated cylinder, read at the:", "options": ["Top of the curve", "Bottom of the meniscus", "Middle of the liquid", "Highest point"], "correctAnswer": "Bottom of the meniscus" },
+    { "id": "q4", "type": "multiple-choice", "question": "Why does ice float on water?", "options": ["Ice is colder", "Ice has lower density", "Water is heavier", "Ice has air bubbles"], "correctAnswer": "Ice has lower density" },
+    { "id": "q5", "type": "multiple-choice", "question": "If you need to find mass, the formula is:", "options": ["m = D/V", "m = V/D", "m = D × V", "m = D + V"], "correctAnswer": "m = D × V" },
+    { "id": "q6", "type": "fill-in-blank", "question": "The formula for density is D = m ÷ ___", "correctAnswer": "V" },
+    { "id": "q7", "type": "fill-in-blank", "question": "An object has mass 60g and volume 20mL. Density = ___ g/mL", "correctAnswer": "3" },
+    { "id": "q8", "type": "fill-in-blank", "question": "If D = 8 g/mL and V = 5 mL, mass = ___ g", "correctAnswer": "40" },
+    { "id": "q9", "type": "fill-in-blank", "question": "Water has a density of ___ g/mL", "correctAnswer": "1" },
+    { "id": "q10", "type": "fill-in-blank", "question": "Graduated cylinder reads 25 mL, then 31 mL after object. Volume = ___ mL", "correctAnswer": "6" },
+    { "id": "q11", "type": "multi-select", "question": "Which objects will FLOAT in water?", "options": ["Ice (0.92)", "Aluminum (2.7)", "Cork (0.24)", "Iron (7.9)", "Oil (0.9)"], "correctAnswers": ["Ice (0.92)", "Cork (0.24)", "Oil (0.9)"] },
+    { "id": "q12", "type": "multi-select", "question": "Which are correct about density?", "options": ["Mass divided by volume", "Objects denser than water sink", "Ice is denser than water", "Doesn't change with amount"], "correctAnswers": ["Mass divided by volume", "Objects denser than water sink", "Doesn't change with amount"] },
+    { "id": "q13", "type": "multi-select", "question": "Select ALL true statements:", "options": ["1 mL = 1 cm³", "Water D = 1 g/mL", "Mass = D × V", "Heavy objects always sink"], "correctAnswers": ["1 mL = 1 cm³", "Water D = 1 g/mL", "Mass = D × V"] },
+    { "id": "q14", "type": "fill-in-blank", "question": "A liquid with mass 75g and volume 50mL has density ___ g/mL", "correctAnswer": "1.5" },
+    { "id": "q15", "type": "fill-in-blank", "question": "If density = 2.5 g/cm³ and mass = 100g, volume = ___ cm³", "correctAnswer": "40" },
+    { "id": "q16", "type": "fill-in-blank", "question": "A metal block 4cm × 3cm × 2cm, mass 192g. Density = ___ g/cm³", "correctAnswer": "8" },
+    { "id": "q17", "type": "fill-in-blank", "question": "Gold (D=19.3) is ___ times denser than water", "correctAnswer": "19.3" },
+    { "id": "q18", "type": "multiple-choice", "question": "Density is mass divided by:", "options": ["Time", "Volume", "Temperature", "Area"], "correctAnswer": "Volume" },
+    { "id": "q19", "type": "multiple-choice", "question": "Before measuring mass, you should:", "options": ["Heat the balance", "Zero/tare the balance", "Calibrate with water", "Shake the sample"], "correctAnswer": "Zero/tare the balance" },
+    { "id": "q20", "type": "fill-in-blank", "question": "Mass of 25 mL of a liquid with D = 2.0 g/mL is ___ g", "correctAnswer": "50" }
+  ]
+}

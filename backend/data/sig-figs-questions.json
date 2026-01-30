@@ -1,0 +1,24 @@
+{
+  "quiz": [
+    { "id": "q1", "type": "multiple-choice", "question": "How many significant figures are in 0.00340?", "options": ["2", "3", "4", "5"], "correctAnswer": "3" },
+    { "id": "q2", "type": "multiple-choice", "question": "How many significant figures are in 100.0?", "options": ["1", "2", "3", "4"], "correctAnswer": "4" },
+    { "id": "q3", "type": "multiple-choice", "question": "For addition/subtraction, round to the:", "options": ["Least sig figs", "Most sig figs", "Least decimal places", "Most decimal places"], "correctAnswer": "Least decimal places" },
+    { "id": "q4", "type": "multiple-choice", "question": "How many sig figs in 0.007?", "options": ["1", "2", "3", "4"], "correctAnswer": "1" },
+    { "id": "q5", "type": "multiple-choice", "question": "In 0.00470, which zeros are significant?", "options": ["All of them", "Only the last one", "Only the middle ones", "None of them"], "correctAnswer": "Only the last one" },
+    { "id": "q6", "type": "fill-in-blank", "question": "How many significant figures are in 2.050?", "correctAnswer": "4" },
+    { "id": "q7", "type": "fill-in-blank", "question": "Calculate with correct sig figs: 4.0 + 2.55 = ?", "correctAnswer": "6.6" },
+    { "id": "q8", "type": "fill-in-blank", "question": "Round 3.678 to 2 significant figures:", "correctAnswer": "3.7" },
+    { "id": "q9", "type": "fill-in-blank", "question": "How many sig figs in 1000.00?", "correctAnswer": "6" },
+    { "id": "q10", "type": "fill-in-blank", "question": "Calculate: 25.5 ÷ 5.0 = ? (correct sig figs)", "correctAnswer": "5.1" },
+    { "id": "q11", "type": "multi-select", "question": "Which numbers have exactly 3 significant figures?", "options": ["0.0250", "2.50", "2500", "25.0", "0.250"], "correctAnswers": ["0.0250", "2.50", "25.0", "0.250"] },
+    { "id": "q12", "type": "multi-select", "question": "Which rules are TRUE about sig figs?", "options": ["Non-zero digits always count", "Leading zeros never count", "Trailing zeros always count", "Captive zeros always count"], "correctAnswers": ["Non-zero digits always count", "Leading zeros never count", "Captive zeros always count"] },
+    { "id": "q13", "type": "multiple-choice", "question": "Calculate: 3.0 × 4.00 with correct sig figs", "options": ["12", "12.0", "12.00", "12.000"], "correctAnswer": "12" },
+    { "id": "q14", "type": "multiple-choice", "question": "The number 4.00 × 10² has how many sig figs?", "options": ["1", "2", "3", "5"], "correctAnswer": "3" },
+    { "id": "q15", "type": "fill-in-blank", "question": "Calculate: 12.11 - 0.2 = ? (correct sig figs)", "correctAnswer": "11.9" },
+    { "id": "q16", "type": "fill-in-blank", "question": "Round 0.09996 to 3 sig figs:", "correctAnswer": "0.100" },
+    { "id": "q17", "type": "multiple-choice", "question": "Which is NOT a rule for counting sig figs?", "options": ["Non-zeros always count", "Captive zeros count", "Leading zeros count", "Trailing zeros after decimal count"], "correctAnswer": "Leading zeros count" },
+    { "id": "q18", "type": "fill-in-blank", "question": "How many sig figs in 0.0101?", "correctAnswer": "3" },
+    { "id": "q19", "type": "multiple-choice", "question": "What makes 2500 different from 2500.?", "options": ["They're the same", "First is ambiguous, second has 4 sig figs", "First has 4, second has 5", "Second is larger"], "correctAnswer": "First is ambiguous, second has 4 sig figs" },
+    { "id": "q20", "type": "fill-in-blank", "question": "Calculate: 8.0 × 5.00 = ? (correct sig figs)", "correctAnswer": "40." }
+  ]
+}

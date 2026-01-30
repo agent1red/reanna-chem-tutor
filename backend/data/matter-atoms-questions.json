@@ -1,0 +1,24 @@
+{
+  "quiz": [
+    { "id": "q1", "type": "multiple-choice", "question": "Which is a chemical property?", "options": ["Density", "Boiling point", "Flammability", "Color"], "correctAnswer": "Flammability" },
+    { "id": "q2", "type": "multiple-choice", "question": "Isotopes have different numbers of:", "options": ["Protons", "Electrons", "Neutrons", "Charges"], "correctAnswer": "Neutrons" },
+    { "id": "q3", "type": "multiple-choice", "question": "Salt water is what type of mixture?", "options": ["Element", "Compound", "Homogeneous mixture", "Heterogeneous mixture"], "correctAnswer": "Homogeneous mixture" },
+    { "id": "q4", "type": "multiple-choice", "question": "An atom with more electrons than protons is a:", "options": ["Cation", "Anion", "Isotope", "Neutral atom"], "correctAnswer": "Anion" },
+    { "id": "q5", "type": "multiple-choice", "question": "Which is a pure substance?", "options": ["Air", "Salt water", "Bronze", "Water"], "correctAnswer": "Water" },
+    { "id": "q6", "type": "fill-in-blank", "question": "The atomic number equals the number of _____", "correctAnswer": "protons" },
+    { "id": "q7", "type": "fill-in-blank", "question": "An atom with 8 protons and 8 neutrons has a mass number of:", "correctAnswer": "16" },
+    { "id": "q8", "type": "fill-in-blank", "question": "What particle has no charge?", "correctAnswer": "neutron" },
+    { "id": "q9", "type": "fill-in-blank", "question": "Chlorine-37 has how many neutrons? (Cl atomic # = 17)", "correctAnswer": "20" },
+    { "id": "q10", "type": "fill-in-blank", "question": "Electrons are found in the electron _____ around the nucleus", "correctAnswer": "cloud" },
+    { "id": "q11", "type": "multi-select", "question": "Which are PHYSICAL changes?", "options": ["Melting ice", "Burning paper", "Dissolving sugar", "Rusting iron", "Cutting wood"], "correctAnswers": ["Melting ice", "Dissolving sugar", "Cutting wood"] },
+    { "id": "q12", "type": "multi-select", "question": "Select all COMPOUNDS:", "options": ["O₂", "H₂O", "NaCl", "Fe", "CO₂"], "correctAnswers": ["H₂O", "NaCl", "CO₂"] },
+    { "id": "q13", "type": "multi-select", "question": "Which are ELEMENTS?", "options": ["CO₂", "Au", "H₂O", "O₂", "NaCl"], "correctAnswers": ["Au", "O₂"] },
+    { "id": "q14", "type": "multiple-choice", "question": "Which is NOT a sign of chemical change?", "options": ["Color change", "Gas bubbles", "Change in shape", "New smell"], "correctAnswer": "Change in shape" },
+    { "id": "q15", "type": "multiple-choice", "question": "Trail mix is:", "options": ["Homogeneous mixture", "Heterogeneous mixture", "Compound", "Element"], "correctAnswer": "Heterogeneous mixture" },
+    { "id": "q16", "type": "fill-in-blank", "question": "A sodium ion (Na⁺) has how many electrons? (Na atomic # = 11)", "correctAnswer": "10" },
+    { "id": "q17", "type": "fill-in-blank", "question": "What is the mass number of an atom with 26 protons and 30 neutrons?", "correctAnswer": "56" },
+    { "id": "q18", "type": "multiple-choice", "question": "Protons have what charge?", "options": ["Positive", "Negative", "Neutral", "Variable"], "correctAnswer": "Positive" },
+    { "id": "q19", "type": "multiple-choice", "question": "Which determines atomic identity?", "options": ["Neutrons", "Protons", "Electrons", "Mass"], "correctAnswer": "Protons" },
+    { "id": "q20", "type": "multiple-choice", "question": "Metals typically form:", "options": ["Anions", "Cations", "Isotopes", "Molecules"], "correctAnswer": "Cations" }
+  ]
+}

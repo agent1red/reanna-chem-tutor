@@ -33,6 +33,13 @@
   <!-- Custom styles -->
   <link rel="stylesheet" href="css/styles.css">
   
+  <!-- Module System -->
+  <script src="js/modules/chemistry/sig-figs.js"></script>
+  <script src="js/modules/chemistry/nomenclature.js"></script>
+  <script src="js/modules/chemistry/matter-atoms.js"></script>
+  <script src="js/modules/chemistry/lab-skills.js"></script>
+  <script src="js/modules/index.js"></script>
+  
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -51,7 +58,92 @@
     .fun-shadow {
       box-shadow: 0 10px 40px rgba(139, 92, 246, 0.3);
     }
+    .reading-section {
+      scroll-margin-top: 2rem;
+    }
+    /* Toast animations */
+    .toast-enter-active {
+      animation: slideIn 0.3s ease-out;
+    }
+    .toast-leave-active {
+      animation: slideOut 0.3s ease-in;
+    }
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideOut {
+      from { transform: translateX(0); opacity: 1; }
+      to { transform: translateX(100%); opacity: 0; }
+    }
   </style>
+  <script>
+    // Global audio player for reading sections
+    let currentAudio = null;
+    let currentButton = null;
+    
+    function playAudio(filename) {
+      const audioPath = '/audio/' + filename;
+      
+      // If same audio is playing, toggle pause/play
+      if (currentAudio && currentAudio.src.endsWith(filename)) {
+        if (currentAudio.paused) {
+          currentAudio.play();
+          if (currentButton) {
+            currentButton.innerHTML = '<span>⏸️</span> Pause';
+          }
+        } else {
+          currentAudio.pause();
+          if (currentButton) {
+            currentButton.innerHTML = '<span>🔊</span> Listen';
+          }
+        }
+        return;
+      }
+      
+      // Stop any currently playing audio
+      if (currentAudio) {
+        currentAudio.pause();
+        currentAudio.currentTime = 0;
+        if (currentButton) {
+          currentButton.innerHTML = '<span>🔊</span> Listen';
+        }
+      }
+      
+      // Find the button that was clicked
+      currentButton = event.target.closest('button');
+      
+      // Start new audio
+      currentAudio = new Audio(audioPath);
+      currentAudio.play().catch(e => {
+        console.error('Audio playback failed:', e);
+        alert('Audio not available yet for this section');
+        currentAudio = null;
+      });
+      
+      if (currentButton) {
+        currentButton.innerHTML = '<span>⏸️</span> Pause';
+      }
+      
+      // Reset button when audio ends
+      currentAudio.onended = function() {
+        if (currentButton) {
+          currentButton.innerHTML = '<span>🔊</span> Listen';
+        }
+        currentAudio = null;
+        currentButton = null;
+      };
+      
+      currentAudio.onerror = function() {
+        console.error('Audio file not found:', audioPath);
+        if (currentButton) {
+          currentButton.innerHTML = '<span>🔊</span> Listen';
+        }
+        currentAudio = null;
+        currentButton = null;
+      };
+    }
+  </script>
 </head>
 <body class="bg-gradient-to-br from-purple-50 via-pink-50 to-cyan-50 min-h-screen">
   <div id="app">
@@ -133,18 +225,8 @@
         </div>
       </nav>
 
-      <!-- Dashboard View -->
-      <div v-if="currentView === 'dashboard'" class="max-w-7xl mx-auto p-6">
-        <!-- Admin Panel Link -->
-        <div v-if="user.role === 'admin'" class="mb-6">
-          <button 
-            @click="currentView = 'admin'"
-            class="bg-warning text-white px-6 py-3 rounded-xl font-bold hover:opacity-90 transition"
-          >
-            👨‍👩‍👧 Admin Dashboard
-          </button>
-        </div>
-
+      <!-- Dashboard View (Students Only) -->
+      <div v-if="currentView === 'dashboard' && user.role !== 'admin'" class="max-w-7xl mx-auto p-6">
         <!-- Progress Overview -->
         <div class="bg-white rounded-3xl shadow-xl p-6 mb-8">
           <h2 class="text-2xl font-bold mb-4">📊 Your Progress</h2>
@@ -313,7 +395,7 @@
 
       <!-- Module View -->
       <div v-else-if="currentView === 'module'" class="max-w-4xl mx-auto p-6">
-        <button @click="currentView = 'dashboard'" class="mb-6 text-primary font-semibold hover:underline">
+        <button @click="goToDashboard" class="mb-6 text-primary font-semibold hover:underline">
           ← Back to Dashboard
         </button>
 
@@ -388,10 +470,11 @@
             <!-- Practice Section -->
             <div v-if="currentSection === 'practice'">
               <h2 class="text-2xl font-bold mb-4">✏️ Practice Problems</h2>
+              <p class="text-gray-500 mb-6">Questions are randomized each time. Get all correct to complete!</p>
               <div class="space-y-6">
                 <div 
-                  v-for="(problem, index) in currentModule.content.practice" 
-                  :key="index"
+                  v-for="(problem, index) in practiceQuestions" 
+                  :key="problem.id || index"
                   class="bg-gray-50 rounded-2xl p-6"
                 >
                   <p class="font-semibold mb-4">{{ index + 1 }}. {{ problem.question }}</p>
@@ -418,12 +501,12 @@
             <!-- Quiz Section -->
             <div v-if="currentSection === 'quiz'">
               <h2 class="text-2xl font-bold mb-4">📝 Quiz</h2>
-              <p class="text-gray-500 mb-6">Score at least 70% to pass. You can retake as many times as needed!</p>
+              <p class="text-gray-500 mb-6">Score at least 70% to pass. Questions and answers are randomized each attempt!</p>
               
               <div class="space-y-6">
                 <div 
-                  v-for="(question, index) in currentModule.content.quiz" 
-                  :key="index"
+                  v-for="(question, index) in quizQuestions" 
+                  :key="question.id || index"
                   class="bg-gray-50 rounded-2xl p-6"
                 >
                   <p class="font-semibold mb-4">{{ index + 1 }}. {{ question.question }}</p>
@@ -489,12 +572,8 @@
         </div>
       </div>
 
-      <!-- Admin View -->
-      <div v-else-if="currentView === 'admin'" class="max-w-6xl mx-auto p-6">
-        <button @click="currentView = 'dashboard'" class="mb-6 text-primary font-semibold hover:underline">
-          ← Back to Dashboard
-        </button>
-
+      <!-- Admin View (shown directly for admin users) -->
+      <div v-if="user.role === 'admin' && (currentView === 'dashboard' || currentView === 'admin')" class="max-w-6xl mx-auto p-6">
         <h1 class="text-3xl font-bold mb-8">👨‍👩‍👧 Admin Dashboard</h1>
 
         <!-- Stats -->
@@ -516,37 +595,291 @@
             <div class="text-gray-500">Avg Quiz Score</div>
           </div>
         </div>
+        
+        <!-- Answer Keys Section -->
+        <div class="bg-white rounded-3xl shadow-xl p-6 mb-8">
+          <h2 class="text-xl font-bold mb-4">📝 Answer Keys</h2>
+          <div class="grid md:grid-cols-5 gap-3">
+            <button @click="openAnswerKey('sig-figs')" class="p-4 bg-purple-50 rounded-xl hover:bg-purple-100 transition text-left">
+              <span class="text-2xl">🔢</span>
+              <div class="font-semibold mt-2">Sig Figs</div>
+            </button>
+            <button @click="openAnswerKey('nomenclature')" class="p-4 bg-pink-50 rounded-xl hover:bg-pink-100 transition text-left">
+              <span class="text-2xl">🏷️</span>
+              <div class="font-semibold mt-2">Nomenclature</div>
+            </button>
+            <button @click="openAnswerKey('matter-atoms')" class="p-4 bg-cyan-50 rounded-xl hover:bg-cyan-100 transition text-left">
+              <span class="text-2xl">⚛️</span>
+              <div class="font-semibold mt-2">Matter & Atoms</div>
+            </button>
+            <button @click="openAnswerKey('lab-skills')" class="p-4 bg-green-50 rounded-xl hover:bg-green-100 transition text-left">
+              <span class="text-2xl">🔬</span>
+              <div class="font-semibold mt-2">Lab Skills</div>
+            </button>
+            <button @click="openAnswerKey('final-exam')" class="p-4 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-xl hover:from-primary/30 hover:to-secondary/30 transition text-left">
+              <span class="text-2xl">🎓</span>
+              <div class="font-semibold mt-2">Final Exam</div>
+            </button>
+          </div>
+        </div>
 
         <!-- Students List -->
         <div class="bg-white rounded-3xl shadow-xl p-6">
           <h2 class="text-xl font-bold mb-4">📋 Students</h2>
-          <div class="space-y-4">
+          
+          <div v-if="students.length === 0" class="text-center py-8 text-gray-400">
+            <div class="text-4xl mb-2">👤</div>
+            <p>No students yet. Click "Add Student" to create one!</p>
+          </div>
+          
+          <div v-else class="space-y-4">
             <div 
               v-for="student in students" 
               :key="student.id"
-              class="flex items-center justify-between p-4 bg-gray-50 rounded-xl"
+              class="p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition"
             >
-              <div>
-                <span class="font-semibold">{{ student.username }}</span>
-                <span class="text-gray-400 text-sm ml-2">Created: {{ new Date(student.created_at).toLocaleDateString() }}</span>
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-4">
+                  <div class="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center">
+                    <span class="text-primary font-bold">{{ student.username.charAt(0).toUpperCase() }}</span>
+                  </div>
+                  <div>
+                    <span class="font-semibold">{{ student.username }}</span>
+                    <span class="text-gray-400 text-sm ml-2">Joined {{ new Date(student.created_at).toLocaleDateString() }}</span>
+                  </div>
+                </div>
+                <div class="flex gap-2">
+                  <button 
+                    @click="viewStudentProgress(student)"
+                    class="px-4 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:opacity-90 transition"
+                  >
+                    📊 Details
+                  </button>
+                  <button 
+                    @click="confirmResetProgress(student)"
+                    class="px-4 py-2 bg-danger text-white rounded-lg text-sm font-semibold hover:opacity-90 transition"
+                  >
+                    🔄 Reset
+                  </button>
+                </div>
               </div>
-              <div class="space-x-2">
-                <button 
-                  @click="viewStudentProgress(student)"
-                  class="px-4 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:opacity-90"
-                >
-                  View Progress
-                </button>
-                <button 
-                  @click="resetStudentProgress(student)"
-                  class="px-4 py-2 bg-danger text-white rounded-lg text-sm font-semibold hover:opacity-90"
-                >
-                  Reset
-                </button>
+              <!-- Progress bar -->
+              <div class="flex items-center gap-3">
+                <div class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div 
+                    class="h-full bg-gradient-to-r from-primary to-secondary transition-all"
+                    :style="{ width: (student.progress || 0) + '%' }"
+                  ></div>
+                </div>
+                <span class="text-sm font-semibold text-gray-600 w-12 text-right">{{ student.progress || 0 }}%</span>
+                <span v-if="student.quizAttempts > 0" class="text-xs bg-accent/20 text-accent px-2 py-1 rounded-full">
+                  {{ student.quizAttempts }} quiz{{ student.quizAttempts > 1 ? 'zes' : '' }}
+                </span>
               </div>
             </div>
           </div>
         </div>
+      </div>
+    </div>
+    
+    <!-- Toast Notifications -->
+    <div class="fixed top-4 right-4 z-[100] space-y-2">
+      <transition-group name="toast">
+        <div 
+          v-for="toast in toasts" 
+          :key="toast.id"
+          @click="removeToast(toast.id)"
+          class="px-4 py-3 rounded-xl shadow-lg cursor-pointer flex items-center gap-3 min-w-[280px] max-w-md"
+          :class="{
+            'bg-green-500 text-white': toast.type === 'success',
+            'bg-red-500 text-white': toast.type === 'error',
+            'bg-yellow-500 text-white': toast.type === 'warning',
+            'bg-blue-500 text-white': toast.type === 'info'
+          }"
+        >
+          <span class="text-xl">
+            {{ toast.type === 'success' ? '✅' : toast.type === 'error' ? '❌' : toast.type === 'warning' ? '⚠️' : 'ℹ️' }}
+          </span>
+          <span class="font-medium">{{ toast.message }}</span>
+        </div>
+      </transition-group>
+    </div>
+    
+    <!-- Student Progress Modal -->
+    <div v-if="showStudentModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-2xl font-bold">📊 {{ selectedStudent?.username }}'s Progress</h2>
+          <button @click="closeStudentModal" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+        </div>
+        
+        <!-- Module Progress with Toggle Buttons -->
+        <div class="space-y-4 mb-6">
+          <div 
+            v-for="mod in ['sig-figs', 'nomenclature', 'matter-atoms', 'lab-skills']" 
+            :key="mod"
+            class="bg-gray-50 rounded-xl p-4"
+          >
+            <div class="flex items-center justify-between mb-3">
+              <span class="font-semibold capitalize">{{ mod.replace(/-/g, ' ') }}</span>
+              <span class="text-sm font-bold" :class="getStudentModuleProgress(mod).completed === 4 ? 'text-success' : 'text-gray-500'">
+                {{ getStudentModuleProgress(mod).completed }}/4
+              </span>
+            </div>
+            
+            <!-- Section toggle buttons -->
+            <div class="grid grid-cols-2 gap-2">
+              <button 
+                v-for="section in ['video', 'reading', 'practice', 'quiz']" 
+                :key="section"
+                @click="toggleSection(mod, section)"
+                class="flex items-center justify-between p-2 rounded-lg border-2 transition text-sm"
+                :class="isSectionCompleteForStudent(mod, section) 
+                  ? 'border-success bg-success/10 text-success' 
+                  : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'"
+              >
+                <span class="capitalize">{{ section }}</span>
+                <span v-if="isSectionCompleteForStudent(mod, section)" class="text-success">✓</span>
+                <span v-else class="text-gray-300">○</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Quiz Attempts -->
+        <div v-if="studentQuizAttempts.length > 0" class="mb-6">
+          <h3 class="font-bold mb-3">📝 Quiz Attempts</h3>
+          <div class="space-y-2">
+            <div 
+              v-for="attempt in studentQuizAttempts.slice(0, 5)" 
+              :key="attempt.id"
+              class="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+            >
+              <span class="capitalize text-sm">{{ attempt.module_id?.replace(/-/g, ' ') || 'Unknown' }}</span>
+              <div class="flex items-center gap-3">
+                <span 
+                  class="font-bold"
+                  :class="attempt.score >= 70 ? 'text-success' : 'text-danger'"
+                >
+                  {{ attempt.score }}%
+                </span>
+                <span class="text-xs text-gray-400">
+                  {{ new Date(attempt.attempted_at).toLocaleDateString() }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="flex gap-3">
+          <button 
+            @click="closeStudentModal"
+            class="flex-1 py-3 bg-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-300 transition"
+          >
+            Close
+          </button>
+          <button 
+            @click="confirmResetProgress(selectedStudent)"
+            class="flex-1 py-3 bg-danger text-white font-bold rounded-xl hover:opacity-90 transition"
+          >
+            🔄 Reset All
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Confirm Modal -->
+    <div v-if="showConfirmModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full text-center">
+        <div class="text-5xl mb-4">⚠️</div>
+        <h2 class="text-xl font-bold mb-4">Are you sure?</h2>
+        <p class="text-gray-500 mb-6">{{ confirmMessage }}</p>
+        <div class="flex gap-3">
+          <button 
+            @click="showConfirmModal = false"
+            class="flex-1 py-3 bg-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-300 transition"
+          >
+            Cancel
+          </button>
+          <button 
+            @click="confirmAction"
+            class="flex-1 py-3 bg-danger text-white font-bold rounded-xl hover:opacity-90 transition"
+          >
+            Yes, Reset
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Answer Key Modal -->
+    <div v-if="showAnswerKey" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-2xl font-bold capitalize">📝 {{ answerKeyModule.replace(/-/g, ' ') }} - Answer Key</h2>
+          <button @click="closeAnswerKey" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+        </div>
+        
+        <div v-if="answerKeyData">
+          <!-- Practice Answers -->
+          <div v-if="answerKeyData.practice?.length" class="mb-6">
+            <h3 class="font-bold text-lg mb-3 text-primary">✏️ Practice Problems</h3>
+            <div class="space-y-2">
+              <div 
+                v-for="(q, i) in answerKeyData.practice" 
+                :key="'p'+i"
+                class="p-3 bg-gray-50 rounded-lg"
+              >
+                <div class="font-medium text-sm">{{ i+1 }}. {{ q.question }}</div>
+                <div class="text-success font-bold mt-1">Answer: {{ q.answer }}</div>
+                <div v-if="q.hint" class="text-gray-400 text-xs mt-1">Hint: {{ q.hint }}</div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Quiz Answers -->
+          <div v-if="answerKeyData.quiz?.length">
+            <h3 class="font-bold text-lg mb-3 text-secondary">
+              {{ answerKeyData.isExam ? '🎓 Final Exam Questions' : '📝 Quiz Questions' }}
+              <span v-if="answerKeyData.totalQuestions" class="text-sm font-normal text-gray-500 ml-2">
+                ({{ answerKeyData.totalQuestions }} total)
+              </span>
+            </h3>
+            <div class="space-y-2">
+              <div 
+                v-for="(q, i) in answerKeyData.quiz" 
+                :key="'q'+i"
+                class="p-3 bg-gray-50 rounded-lg"
+              >
+                <div class="flex items-start justify-between gap-2">
+                  <div class="font-medium text-sm flex-1">{{ i+1 }}. {{ q.question }}</div>
+                  <span v-if="q.module" class="text-xs px-2 py-1 bg-primary/10 text-primary rounded-full whitespace-nowrap">
+                    {{ q.module.replace(/-/g, ' ') }}
+                  </span>
+                </div>
+                <div class="text-success font-bold mt-1">
+                  Answer: {{ q.type === 'multi-select' ? q.correctAnswers?.join(', ') : q.correctAnswer }}
+                </div>
+                <div v-if="q.options" class="text-gray-400 text-xs mt-1">
+                  Options: {{ q.options?.join(' | ') }}
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div v-if="!answerKeyData.practice?.length && !answerKeyData.quiz?.length" class="text-center py-8 text-gray-400">
+            No answer key data available for this module.
+          </div>
+        </div>
+        <div v-else class="text-center py-8 text-gray-400">
+          Loading...
+        </div>
+        
+        <button 
+          @click="closeAnswerKey"
+          class="w-full mt-6 py-3 bg-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-300 transition"
+        >
+          Close
+        </button>
       </div>
     </div>
 

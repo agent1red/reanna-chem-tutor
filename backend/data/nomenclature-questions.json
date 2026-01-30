@@ -1,0 +1,24 @@
+{
+  "quiz": [
+    { "id": "q1", "type": "multiple-choice", "question": "What type of compound is CuCl₂?", "options": ["Type I", "Type II", "Type III"], "correctAnswer": "Type II" },
+    { "id": "q2", "type": "multiple-choice", "question": "Which prefix means 4?", "options": ["tri", "tetra", "penta", "hexa"], "correctAnswer": "tetra" },
+    { "id": "q3", "type": "multiple-choice", "question": "N₂O₅ is named:", "options": ["Nitrogen oxide", "Nitrogen pentoxide", "Dinitrogen pentoxide", "Dinitrogen pentaoxide"], "correctAnswer": "Dinitrogen pentoxide" },
+    { "id": "q4", "type": "multiple-choice", "question": "In FeCl₃, what is iron's charge?", "options": ["+1", "+2", "+3", "+4"], "correctAnswer": "+3" },
+    { "id": "q5", "type": "multiple-choice", "question": "Which compound name is INCORRECT?", "options": ["Sodium chloride", "Monocarbon dioxide", "Calcium bromide", "Dinitrogen tetroxide"], "correctAnswer": "Monocarbon dioxide" },
+    { "id": "q6", "type": "fill-in-blank", "question": "Name this compound: MgO", "correctAnswer": "magnesium oxide" },
+    { "id": "q7", "type": "fill-in-blank", "question": "Name this compound: CO", "correctAnswer": "carbon monoxide" },
+    { "id": "q8", "type": "fill-in-blank", "question": "Write the formula for iron(II) sulfide:", "correctAnswer": "FeS" },
+    { "id": "q9", "type": "fill-in-blank", "question": "Name: PbO₂", "correctAnswer": "lead(IV) oxide" },
+    { "id": "q10", "type": "fill-in-blank", "question": "Write the formula for: sulfur trioxide", "correctAnswer": "SO3" },
+    { "id": "q11", "type": "multi-select", "question": "Which are Type I compounds?", "options": ["NaCl", "FeCl₂", "CaBr₂", "CuO", "AlF₃"], "correctAnswers": ["NaCl", "CaBr₂", "AlF₃"] },
+    { "id": "q12", "type": "multi-select", "question": "Which use prefixes in their names?", "options": ["CO₂", "NaCl", "N₂O₄", "SF₆", "MgO"], "correctAnswers": ["CO₂", "N₂O₄", "SF₆"] },
+    { "id": "q13", "type": "fill-in-blank", "question": "Name: Ca₃N₂", "correctAnswer": "calcium nitride" },
+    { "id": "q14", "type": "fill-in-blank", "question": "Write the formula for: copper(I) chloride", "correctAnswer": "CuCl" },
+    { "id": "q15", "type": "fill-in-blank", "question": "Name: Mn₂O₃", "correctAnswer": "manganese(III) oxide" },
+    { "id": "q16", "type": "fill-in-blank", "question": "Write the formula for: barium sulfide", "correctAnswer": "BaS" },
+    { "id": "q17", "type": "multiple-choice", "question": "Which prefix means 7?", "options": ["hexa", "hepta", "octa", "nona"], "correctAnswer": "hepta" },
+    { "id": "q18", "type": "multiple-choice", "question": "What does the Roman numeral indicate?", "options": ["Number of atoms", "Metal's charge", "Nonmetal's charge", "Subscript"], "correctAnswer": "Metal's charge" },
+    { "id": "q19", "type": "multiple-choice", "question": "Zn is which type of metal for naming?", "options": ["Type I (fixed charge)", "Type II (variable charge)", "Nonmetal", "Noble gas"], "correctAnswer": "Type I (fixed charge)" },
+    { "id": "q20", "type": "fill-in-blank", "question": "Write the formula for: potassium nitrate", "correctAnswer": "KNO3" }
+  ]
+}
