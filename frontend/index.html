@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🧪 Reanna's Chemistry Tutor</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#8B5CF6',
+            secondary: '#EC4899',
+            accent: '#06B6D4',
+            success: '#10B981',
+            warning: '#F59E0B',
+            danger: '#EF4444'
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Vue 3 -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  
+  <!-- Vue Router -->
+  <script src="https://unpkg.com/vue-router@4/dist/vue-router.global.prod.js"></script>
+  
+  <!-- Custom styles -->
+  <link rel="stylesheet" href="css/styles.css">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    body {
+      font-family: 'Nunito', sans-serif;
+    }
+    .gradient-bg {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .card-gradient {
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    }
+    .fun-shadow {
+      box-shadow: 0 10px 40px rgba(139, 92, 246, 0.3);
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-purple-50 via-pink-50 to-cyan-50 min-h-screen">
+  <div id="app">
+    <!-- Loading state -->
+    <div v-if="loading" class="flex items-center justify-center min-h-screen">
+      <div class="text-center">
+        <div class="animate-spin rounded-full h-16 w-16 border-4 border-primary border-t-transparent mx-auto mb-4"></div>
+        <p class="text-xl text-gray-600">Loading Chemistry Magic... 🧪</p>
+      </div>
+    </div>
+
+    <!-- Login Screen -->
+    <div v-else-if="!user" class="flex items-center justify-center min-h-screen p-4">
+      <div class="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md fun-shadow">
+        <div class="text-center mb-8">
+          <div class="text-6xl mb-4">🧪</div>
+          <h1 class="text-3xl font-extrabold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+            Chemistry Tutor
+          </h1>
+          <p class="text-gray-500 mt-2">Let's learn some chemistry!</p>
+        </div>
+
+        <form @submit.prevent="login" class="space-y-4">
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Username</label>
+            <input 
+              v-model="loginForm.username" 
+              type="text" 
+              class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-primary focus:outline-none transition"
+              placeholder="Enter your username"
+              required
+            >
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Password</label>
+            <input 
+              v-model="loginForm.password" 
+              type="password" 
+              class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-primary focus:outline-none transition"
+              placeholder="Enter your password"
+              required
+            >
+          </div>
+          <div v-if="loginError" class="text-danger text-sm text-center">{{ loginError }}</div>
+          <button 
+            type="submit" 
+            class="w-full py-3 px-6 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-xl hover:opacity-90 transition transform hover:scale-105"
+          >
+            Let's Go! 🚀
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Main App -->
+    <div v-else>
+      <!-- Navigation -->
+      <nav class="bg-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4">
+          <div class="flex justify-between items-center h-16">
+            <div class="flex items-center space-x-2 cursor-pointer" @click="currentView = 'dashboard'">
+              <span class="text-2xl">🧪</span>
+              <span class="font-bold text-xl bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                ChemTutor
+              </span>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+              <span class="text-gray-600">Hi, <span class="font-semibold">{{ user.username }}</span>!</span>
+              <span v-if="user.role === 'admin'" class="bg-warning text-white px-2 py-1 rounded-full text-xs font-bold">ADMIN</span>
+              <button 
+                @click="logout" 
+                class="px-4 py-2 text-gray-600 hover:text-danger transition"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <!-- Dashboard View -->
+      <div v-if="currentView === 'dashboard'" class="max-w-7xl mx-auto p-6">
+        <!-- Admin Panel Link -->
+        <div v-if="user.role === 'admin'" class="mb-6">
+          <button 
+            @click="currentView = 'admin'"
+            class="bg-warning text-white px-6 py-3 rounded-xl font-bold hover:opacity-90 transition"
+          >
+            👨‍👩‍👧 Admin Dashboard
+          </button>
+        </div>
+
+        <!-- Progress Overview -->
+        <div class="bg-white rounded-3xl shadow-xl p-6 mb-8">
+          <h2 class="text-2xl font-bold mb-4">📊 Your Progress</h2>
+          <div class="relative pt-1">
+            <div class="flex mb-2 items-center justify-between">
+              <span class="text-sm font-semibold text-primary">Overall Completion</span>
+              <span class="text-sm font-semibold text-primary">{{ overallProgress }}%</span>
+            </div>
+            <div class="overflow-hidden h-4 text-xs flex rounded-full bg-purple-100">
+              <div 
+                :style="{ width: overallProgress + '%' }" 
+                class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-gradient-to-r from-primary to-secondary transition-all duration-500"
+              ></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Module Cards -->
+        <h2 class="text-2xl font-bold mb-6">📚 Learning Modules</h2>
+        <div class="grid md:grid-cols-2 gap-6">
+          <div 
+            v-for="module in modules" 
+            :key="module.id"
+            @click="openModule(module)"
+            class="bg-white rounded-3xl shadow-xl p-6 cursor-pointer transform hover:scale-105 transition hover:shadow-2xl"
+          >
+            <div class="flex items-start justify-between mb-4">
+              <span class="text-4xl">{{ module.emoji }}</span>
+              <span 
+                :class="getModuleProgress(module.id) === 100 ? 'bg-success' : 'bg-gray-200'"
+                class="px-3 py-1 rounded-full text-sm font-bold text-white"
+              >
+                {{ getModuleProgress(module.id) }}%
+              </span>
+            </div>
+            <h3 class="text-xl font-bold mb-2">{{ module.title }}</h3>
+            <p class="text-gray-500 text-sm mb-4">{{ module.description }}</p>
+            
+            <!-- Section indicators -->
+            <div class="flex space-x-2">
+              <span 
+                v-for="section in ['video', 'reading', 'practice', 'quiz']" 
+                :key="section"
+                :class="isSectionComplete(module.id, section) ? 'bg-success' : 'bg-gray-300'"
+                class="w-8 h-2 rounded-full transition"
+              ></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Final Exam -->
+        <div class="mt-8 bg-gradient-to-r from-primary to-secondary rounded-3xl shadow-xl p-8 text-white">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-2xl font-bold mb-2">🎓 Final Exam</h2>
+              <p class="opacity-90">Complete all modules to unlock the final exam!</p>
+            </div>
+            <button 
+              :disabled="overallProgress < 100"
+              :class="overallProgress >= 100 ? 'bg-white text-primary hover:scale-105' : 'bg-white/30 cursor-not-allowed'"
+              class="px-8 py-4 rounded-xl font-bold transition transform"
+            >
+              {{ overallProgress >= 100 ? 'Take Exam 🚀' : '🔒 Locked' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Module View -->
+      <div v-else-if="currentView === 'module'" class="max-w-4xl mx-auto p-6">
+        <button @click="currentView = 'dashboard'" class="mb-6 text-primary font-semibold hover:underline">
+          ← Back to Dashboard
+        </button>
+
+        <div class="bg-white rounded-3xl shadow-xl overflow-hidden">
+          <!-- Module Header -->
+          <div class="bg-gradient-to-r from-primary to-secondary p-8 text-white">
+            <span class="text-5xl mb-4 block">{{ currentModule.emoji }}</span>
+            <h1 class="text-3xl font-bold">{{ currentModule.title }}</h1>
+          </div>
+
+          <!-- Section Tabs -->
+          <div class="flex border-b">
+            <button 
+              v-for="(section, index) in sections" 
+              :key="section.id"
+              @click="currentSection = section.id"
+              :class="currentSection === section.id ? 'border-primary text-primary' : 'border-transparent text-gray-500'"
+              class="flex-1 py-4 px-6 font-semibold border-b-2 hover:text-primary transition"
+            >
+              <span class="mr-2">{{ section.emoji }}</span>
+              {{ section.title }}
+              <span v-if="isSectionComplete(currentModule.id, section.id)" class="ml-2">✅</span>
+            </button>
+          </div>
+
+          <!-- Section Content -->
+          <div class="p-8">
+            <!-- Video Section -->
+            <div v-if="currentSection === 'video'">
+              <h2 class="text-2xl font-bold mb-4">📺 Video Lesson</h2>
+              <div class="aspect-video bg-gray-900 rounded-2xl overflow-hidden mb-6">
+                <iframe 
+                  :src="currentModule.content.video.url"
+                  class="w-full h-full"
+                  frameborder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowfullscreen
+                ></iframe>
+              </div>
+              <button 
+                @click="markComplete('video')"
+                class="w-full py-3 bg-success text-white font-bold rounded-xl hover:opacity-90 transition"
+              >
+                ✅ Mark as Watched
+              </button>
+            </div>
+
+            <!-- Reading Section -->
+            <div v-if="currentSection === 'reading'">
+              <div class="flex items-center justify-between mb-4">
+                <h2 class="text-2xl font-bold">📖 Reading Material</h2>
+                <!-- Audio Controls -->
+                <div class="flex items-center space-x-2">
+                  <button 
+                    @click="toggleAudio"
+                    class="px-4 py-2 bg-accent text-white rounded-xl font-semibold hover:opacity-90 transition flex items-center"
+                  >
+                    <span v-if="!isPlaying">🔊 Listen</span>
+                    <span v-else>⏸️ Pause</span>
+                  </button>
+                </div>
+              </div>
+              <div class="prose max-w-none" v-html="currentModule.content.reading.html"></div>
+              <button 
+                @click="markComplete('reading')"
+                class="w-full mt-6 py-3 bg-success text-white font-bold rounded-xl hover:opacity-90 transition"
+              >
+                ✅ Mark as Read
+              </button>
+            </div>
+
+            <!-- Practice Section -->
+            <div v-if="currentSection === 'practice'">
+              <h2 class="text-2xl font-bold mb-4">✏️ Practice Problems</h2>
+              <div class="space-y-6">
+                <div 
+                  v-for="(problem, index) in currentModule.content.practice" 
+                  :key="index"
+                  class="bg-gray-50 rounded-2xl p-6"
+                >
+                  <p class="font-semibold mb-4">{{ index + 1 }}. {{ problem.question }}</p>
+                  <input 
+                    v-model="practiceAnswers[index]"
+                    type="text"
+                    class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-primary focus:outline-none"
+                    placeholder="Your answer..."
+                  >
+                  <div v-if="practiceChecked[index] !== undefined" class="mt-2">
+                    <span v-if="practiceChecked[index]" class="text-success font-semibold">✅ Correct!</span>
+                    <span v-else class="text-danger font-semibold">❌ Try again. Hint: {{ problem.hint }}</span>
+                  </div>
+                </div>
+              </div>
+              <button 
+                @click="checkPractice"
+                class="w-full mt-6 py-3 bg-primary text-white font-bold rounded-xl hover:opacity-90 transition"
+              >
+                Check Answers
+              </button>
+            </div>
+
+            <!-- Quiz Section -->
+            <div v-if="currentSection === 'quiz'">
+              <h2 class="text-2xl font-bold mb-4">📝 Quiz</h2>
+              <p class="text-gray-500 mb-6">Score at least 70% to pass. You can retake as many times as needed!</p>
+              
+              <div class="space-y-6">
+                <div 
+                  v-for="(question, index) in currentModule.content.quiz" 
+                  :key="index"
+                  class="bg-gray-50 rounded-2xl p-6"
+                >
+                  <p class="font-semibold mb-4">{{ index + 1 }}. {{ question.question }}</p>
+                  
+                  <!-- Multiple Choice -->
+                  <div v-if="question.type === 'multiple-choice'" class="space-y-2">
+                    <label 
+                      v-for="(option, optIndex) in question.options" 
+                      :key="optIndex"
+                      class="flex items-center p-3 rounded-xl border-2 cursor-pointer hover:border-primary transition"
+                      :class="quizAnswers[index] === option ? 'border-primary bg-purple-50' : 'border-gray-200'"
+                    >
+                      <input 
+                        type="radio" 
+                        :name="'q' + index" 
+                        :value="option"
+                        v-model="quizAnswers[index]"
+                        class="mr-3"
+                      >
+                      {{ option }}
+                    </label>
+                  </div>
+                  
+                  <!-- Fill in the blank -->
+                  <div v-else>
+                    <input 
+                      v-model="quizAnswers[index]"
+                      type="text"
+                      class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-primary focus:outline-none"
+                      placeholder="Your answer..."
+                    >
+                  </div>
+                </div>
+              </div>
+              
+              <button 
+                @click="submitQuiz"
+                class="w-full mt-6 py-3 bg-secondary text-white font-bold rounded-xl hover:opacity-90 transition"
+              >
+                Submit Quiz 🎯
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Admin View -->
+      <div v-else-if="currentView === 'admin'" class="max-w-6xl mx-auto p-6">
+        <button @click="currentView = 'dashboard'" class="mb-6 text-primary font-semibold hover:underline">
+          ← Back to Dashboard
+        </button>
+
+        <h1 class="text-3xl font-bold mb-8">👨‍👩‍👧 Admin Dashboard</h1>
+
+        <!-- Stats -->
+        <div class="grid md:grid-cols-4 gap-4 mb-8">
+          <div class="bg-white rounded-2xl shadow-lg p-6 text-center">
+            <div class="text-3xl font-bold text-primary">{{ adminStats.totalStudents }}</div>
+            <div class="text-gray-500">Students</div>
+          </div>
+          <div class="bg-white rounded-2xl shadow-lg p-6 text-center">
+            <div class="text-3xl font-bold text-success">{{ adminStats.averageProgress }}%</div>
+            <div class="text-gray-500">Avg Progress</div>
+          </div>
+          <div class="bg-white rounded-2xl shadow-lg p-6 text-center">
+            <div class="text-3xl font-bold text-secondary">{{ adminStats.totalQuizAttempts }}</div>
+            <div class="text-gray-500">Quiz Attempts</div>
+          </div>
+          <div class="bg-white rounded-2xl shadow-lg p-6 text-center">
+            <div class="text-3xl font-bold text-accent">{{ adminStats.averageQuizScore }}%</div>
+            <div class="text-gray-500">Avg Quiz Score</div>
+          </div>
+        </div>
+
+        <!-- Students List -->
+        <div class="bg-white rounded-3xl shadow-xl p-6">
+          <h2 class="text-xl font-bold mb-4">📋 Students</h2>
+          <div class="space-y-4">
+            <div 
+              v-for="student in students" 
+              :key="student.id"
+              class="flex items-center justify-between p-4 bg-gray-50 rounded-xl"
+            >
+              <div>
+                <span class="font-semibold">{{ student.username }}</span>
+                <span class="text-gray-400 text-sm ml-2">Created: {{ new Date(student.created_at).toLocaleDateString() }}</span>
+              </div>
+              <div class="space-x-2">
+                <button 
+                  @click="viewStudentProgress(student)"
+                  class="px-4 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:opacity-90"
+                >
+                  View Progress
+                </button>
+                <button 
+                  @click="resetStudentProgress(student)"
+                  class="px-4 py-2 bg-danger text-white rounded-lg text-sm font-semibold hover:opacity-90"
+                >
+                  Reset
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quiz Results Modal -->
+    <div v-if="showQuizResults" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full text-center">
+        <div class="text-6xl mb-4">{{ quizResults.passed ? '🎉' : '📚' }}</div>
+        <h2 class="text-2xl font-bold mb-2">
+          {{ quizResults.passed ? 'Great Job!' : 'Keep Practicing!' }}
+        </h2>
+        <div class="text-5xl font-bold my-6" :class="quizResults.passed ? 'text-success' : 'text-warning'">
+          {{ quizResults.score }}%
+        </div>
+        <p class="text-gray-500 mb-6">
+          You got {{ quizResults.correctCount }} out of {{ quizResults.totalQuestions }} correct.
+          {{ quizResults.passed ? 'Quiz completed!' : 'You need 70% to pass.' }}
+        </p>
+        <button 
+          @click="showQuizResults = false"
+          class="w-full py-3 bg-primary text-white font-bold rounded-xl hover:opacity-90 transition"
+        >
+          {{ quizResults.passed ? 'Continue' : 'Try Again' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
