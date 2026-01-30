@@ -58,6 +58,11 @@ router.post('/submit', authenticateToken, async (req, res) => {
 
     if (answer.type === 'multiple-choice') {
       isCorrect = answer.userAnswer === answer.correctAnswer;
+    } else if (answer.type === 'multi-select') {
+      // For multi-select, check if arrays match (order doesn't matter)
+      const userAnswers = Array.isArray(answer.userAnswer) ? answer.userAnswer.sort() : [];
+      const correctAnswers = Array.isArray(answer.correctAnswer) ? answer.correctAnswer.sort() : [];
+      isCorrect = JSON.stringify(userAnswers) === JSON.stringify(correctAnswers);
     } else if (answer.type === 'fill-in-blank') {
       isCorrect = await gradeWithAI(answer.question, answer.correctAnswer, answer.userAnswer);
     }

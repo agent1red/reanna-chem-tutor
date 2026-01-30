@@ -260,6 +260,25 @@
                       </label>
                     </div>
                     
+                    <!-- Multi-Select -->
+                    <div v-else-if="question.type === 'multi-select'" class="space-y-2 mt-3">
+                      <p class="text-sm text-purple-600 mb-2">✓ Select ALL that apply</p>
+                      <label 
+                        v-for="(option, optIndex) in question.options" 
+                        :key="optIndex"
+                        @click.prevent="toggleExamMultiSelect(index, option)"
+                        class="flex items-center p-3 rounded-xl border-2 cursor-pointer hover:border-primary transition"
+                        :class="examAnswers[index]?.includes(option) ? 'border-primary bg-purple-50' : 'border-gray-200'"
+                      >
+                        <input 
+                          type="checkbox" 
+                          :checked="examAnswers[index]?.includes(option)"
+                          class="mr-3 pointer-events-none"
+                        >
+                        {{ option }}
+                      </label>
+                    </div>
+                    
                     <!-- Fill in the blank -->
                     <div v-else class="mt-3">
                       <input 
@@ -423,6 +442,25 @@
                         :value="option"
                         v-model="quizAnswers[index]"
                         class="mr-3"
+                      >
+                      {{ option }}
+                    </label>
+                  </div>
+                  
+                  <!-- Multi-Select -->
+                  <div v-else-if="question.type === 'multi-select'" class="space-y-2">
+                    <p class="text-sm text-purple-600 mb-2">✓ Select ALL that apply</p>
+                    <label 
+                      v-for="(option, optIndex) in question.options" 
+                      :key="optIndex"
+                      @click.prevent="toggleMultiSelect(index, option)"
+                      class="flex items-center p-3 rounded-xl border-2 cursor-pointer hover:border-primary transition"
+                      :class="quizAnswers[index]?.includes(option) ? 'border-primary bg-purple-50' : 'border-gray-200'"
+                    >
+                      <input 
+                        type="checkbox" 
+                        :checked="quizAnswers[index]?.includes(option)"
+                        class="mr-3 pointer-events-none"
                       >
                       {{ option }}
                     </label>
