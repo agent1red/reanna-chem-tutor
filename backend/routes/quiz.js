@@ -1,17 +1,18 @@
 const express = require('express');
 const OpenAI = require('openai');
-const { db } = require('../db/init');
+const { getDb, getNextId } = require('../db/init');
 const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
+let openai;
+if (process.env.OPENAI_API_KEY) {
+  openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+}
 
 // Grade a fill-in-the-blank answer using AI
 async function gradeWithAI(question, correctAnswer, userAnswer) {
-  if (!process.env.OPENAI_API_KEY) {
+  if (!openai) {
     // Fallback to simple string matching if no API key
     return userAnswer.toLowerCase().trim() === correctAnswer.toLowerCase().trim();
   }
@@ -37,7 +38,6 @@ async function gradeWithAI(question, correctAnswer, userAnswer) {
     return result === 'CORRECT';
   } catch (error) {
     console.error('AI grading error:', error);
-    // Fallback to simple comparison
     return userAnswer.toLowerCase().trim() === correctAnswer.toLowerCase().trim();
   }
 }
@@ -75,22 +75,41 @@ router.post('/submit', authenticateToken, async (req, res) => {
   const score = Math.round((correctCount / answers.length) * 100);
 
   // Save attempt
-  db.prepare(`
-    INSERT INTO quiz_attempts (user_id, module_id, answers, score, total_questions)
-    VALUES (?, ?, ?, ?, ?)
-  `).run(req.user.id, moduleId, JSON.stringify(results), score, answers.length);
+  const db = getDb();
+  db.data.quizAttempts.push({
+    id: getNextId('quizAttempts'),
+    user_id: req.user.id,
+    module_id: moduleId,
+    answers: JSON.stringify(results),
+    score,
+    total_questions: answers.length,
+    attempted_at: new Date().toISOString()
+  });
 
   // Update progress if passed (>= 70%)
   if (score >= 70) {
-    db.prepare(`
-      INSERT INTO progress (user_id, module_id, section_type, completed, score, completed_at)
-      VALUES (?, ?, 'quiz', 1, ?, datetime('now'))
-      ON CONFLICT(user_id, module_id, section_type) DO UPDATE SET
-        completed = 1,
-        score = MAX(progress.score, excluded.score),
-        completed_at = datetime('now')
-    `).run(req.user.id, moduleId, score);
+    const existing = db.data.progress.find(
+      p => p.user_id === req.user.id && p.module_id === moduleId && p.section_type === 'quiz'
+    );
+
+    if (existing) {
+      existing.completed = true;
+      existing.score = Math.max(existing.score || 0, score);
+      existing.completed_at = new Date().toISOString();
+    } else {
+      db.data.progress.push({
+        id: getNextId('progress'),
+        user_id: req.user.id,
+        module_id: moduleId,
+        section_type: 'quiz',
+        completed: true,
+        score,
+        completed_at: new Date().toISOString()
+      });
+    }
   }
+
+  await db.write();
 
   res.json({
     score,
@@ -103,13 +122,17 @@ router.post('/submit', authenticateToken, async (req, res) => {
 
 // Get quiz history
 router.get('/history/:moduleId', authenticateToken, (req, res) => {
-  const attempts = db.prepare(`
-    SELECT id, score, total_questions, attempted_at
-    FROM quiz_attempts
-    WHERE user_id = ? AND module_id = ?
-    ORDER BY attempted_at DESC
-    LIMIT 10
-  `).all(req.user.id, req.params.moduleId);
+  const db = getDb();
+  const attempts = db.data.quizAttempts
+    .filter(a => a.user_id === req.user.id && a.module_id === req.params.moduleId)
+    .sort((a, b) => new Date(b.attempted_at) - new Date(a.attempted_at))
+    .slice(0, 10)
+    .map(a => ({
+      id: a.id,
+      score: a.score,
+      total_questions: a.total_questions,
+      attempted_at: a.attempted_at
+    }));
 
   res.json(attempts);
 });

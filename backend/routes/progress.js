@@ -1,24 +1,21 @@
 const express = require('express');
-const { db } = require('../db/init');
+const { getDb, getNextId } = require('../db/init');
 const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
 // Get all progress for current user
 router.get('/', authenticateToken, (req, res) => {
-  const progress = db.prepare(`
-    SELECT module_id, section_type, completed, score, completed_at
-    FROM progress
-    WHERE user_id = ?
-  `).all(req.user.id);
+  const db = getDb();
+  const userProgress = db.data.progress.filter(p => p.user_id === req.user.id);
 
   // Group by module
-  const grouped = progress.reduce((acc, item) => {
+  const grouped = userProgress.reduce((acc, item) => {
     if (!acc[item.module_id]) {
       acc[item.module_id] = {};
     }
     acc[item.module_id][item.section_type] = {
-      completed: item.completed === 1,
+      completed: item.completed,
       score: item.score,
       completed_at: item.completed_at
     };
@@ -29,7 +26,7 @@ router.get('/', authenticateToken, (req, res) => {
 });
 
 // Update progress for a section
-router.post('/update', authenticateToken, (req, res) => {
+router.post('/update', authenticateToken, async (req, res) => {
   const { moduleId, sectionType, completed, score } = req.body;
 
   if (!moduleId || !sectionType) {
@@ -41,35 +38,41 @@ router.post('/update', authenticateToken, (req, res) => {
     return res.status(400).json({ error: 'Invalid section type' });
   }
 
-  const stmt = db.prepare(`
-    INSERT INTO progress (user_id, module_id, section_type, completed, score, completed_at)
-    VALUES (?, ?, ?, ?, ?, datetime('now'))
-    ON CONFLICT(user_id, module_id, section_type) DO UPDATE SET
-      completed = excluded.completed,
-      score = CASE WHEN excluded.score IS NOT NULL THEN excluded.score ELSE progress.score END,
-      completed_at = datetime('now')
-  `);
+  const db = getDb();
+  const existing = db.data.progress.find(
+    p => p.user_id === req.user.id && p.module_id === moduleId && p.section_type === sectionType
+  );
 
-  stmt.run(req.user.id, moduleId, sectionType, completed ? 1 : 0, score || null);
+  if (existing) {
+    existing.completed = completed || existing.completed;
+    existing.score = score !== undefined ? score : existing.score;
+    existing.completed_at = new Date().toISOString();
+  } else {
+    db.data.progress.push({
+      id: getNextId('progress'),
+      user_id: req.user.id,
+      module_id: moduleId,
+      section_type: sectionType,
+      completed: completed || false,
+      score: score || null,
+      completed_at: new Date().toISOString()
+    });
+  }
 
+  await db.write();
   res.json({ success: true });
 });
 
 // Get module completion percentage
 router.get('/summary', authenticateToken, (req, res) => {
   const modules = ['sig-figs', 'nomenclature', 'matter-atoms', 'lab-skills'];
-  const sectionsPerModule = 4; // video, reading, practice, quiz
+  const sectionsPerModule = 4;
 
-  const completedCount = db.prepare(`
-    SELECT module_id, COUNT(*) as completed
-    FROM progress
-    WHERE user_id = ? AND completed = 1
-    GROUP BY module_id
-  `).all(req.user.id);
+  const db = getDb();
+  const userProgress = db.data.progress.filter(p => p.user_id === req.user.id && p.completed);
 
   const summary = modules.map(moduleId => {
-    const found = completedCount.find(c => c.module_id === moduleId);
-    const completed = found ? found.completed : 0;
+    const completed = userProgress.filter(p => p.module_id === moduleId).length;
     return {
       moduleId,
       completed,

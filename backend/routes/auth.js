@@ -1,19 +1,20 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
-const { db } = require('../db/init');
+const { getDb, getNextId } = require('../db/init');
 const { generateToken, authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
 // Login
-router.post('/login', (req, res) => {
+router.post('/login', async (req, res) => {
   const { username, password } = req.body;
 
   if (!username || !password) {
     return res.status(400).json({ error: 'Username and password required' });
   }
 
-  const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username.toLowerCase());
+  const db = getDb();
+  const user = db.data.users.find(u => u.username === username.toLowerCase());
   
   if (!user) {
     return res.status(401).json({ error: 'Invalid username or password' });
@@ -35,8 +36,8 @@ router.post('/login', (req, res) => {
   });
 });
 
-// Register (admin only in production, open for initial setup)
-router.post('/register', (req, res) => {
+// Register
+router.post('/register', async (req, res) => {
   const { username, password } = req.body;
 
   if (!username || !password) {
@@ -47,34 +48,44 @@ router.post('/register', (req, res) => {
     return res.status(400).json({ error: 'Password must be at least 6 characters' });
   }
 
-  const existing = db.prepare('SELECT id FROM users WHERE username = ?').get(username.toLowerCase());
+  const db = getDb();
+  const existing = db.data.users.find(u => u.username === username.toLowerCase());
   if (existing) {
     return res.status(400).json({ error: 'Username already exists' });
   }
 
   const hashedPassword = bcrypt.hashSync(password, 10);
-  const result = db.prepare('INSERT INTO users (username, password, role) VALUES (?, ?, ?)').run(
-    username.toLowerCase(),
-    hashedPassword,
-    'student'
-  );
+  const newUser = {
+    id: getNextId('users'),
+    username: username.toLowerCase(),
+    password: hashedPassword,
+    role: 'student',
+    created_at: new Date().toISOString()
+  };
+  
+  db.data.users.push(newUser);
+  await db.write();
 
-  const user = { id: result.lastInsertRowid, username: username.toLowerCase(), role: 'student' };
-  const token = generateToken(user);
-
+  const token = generateToken(newUser);
   res.status(201).json({
     token,
-    user
+    user: { id: newUser.id, username: newUser.username, role: newUser.role }
   });
 });
 
 // Get current user
 router.get('/me', authenticateToken, (req, res) => {
-  const user = db.prepare('SELECT id, username, role, created_at FROM users WHERE id = ?').get(req.user.id);
+  const db = getDb();
+  const user = db.data.users.find(u => u.id === req.user.id);
   if (!user) {
     return res.status(404).json({ error: 'User not found' });
   }
-  res.json(user);
+  res.json({
+    id: user.id,
+    username: user.username,
+    role: user.role,
+    created_at: user.created_at
+  });
 });
 
 module.exports = router;
