@@ -27,11 +27,15 @@ async function setupRoutes() {
   const progressRoutes = require('./routes/progress');
   const quizRoutes = require('./routes/quiz');
   const adminRoutes = require('./routes/admin');
+  const ttsRoutes = require('./routes/tts');
+  const examRoutes = require('./routes/exam');
 
   app.use('/api/auth', authRoutes);
   app.use('/api/progress', progressRoutes);
   app.use('/api/quiz', quizRoutes);
   app.use('/api/admin', adminRoutes);
+  app.use('/api/tts', ttsRoutes);
+  app.use('/api/exam', examRoutes);
 }
 
 // Serve frontend for all other routes (SPA support)

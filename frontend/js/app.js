@@ -391,6 +391,13 @@ createApp({
     const isPlaying = ref(false);
     const audioElement = ref(null);
     
+    // Final exam state
+    const examEligible = ref(false);
+    const examQuestions = ref([]);
+    const examAnswers = ref([]);
+    const showExamResults = ref(false);
+    const examResults = ref({});
+    
     // Admin state
     const students = ref([]);
     const adminStats = ref({ totalStudents: 0, averageProgress: 0, totalQuizAttempts: 0, averageQuizScore: 0 });
@@ -554,12 +561,29 @@ createApp({
       }
     };
 
-    const toggleAudio = () => {
-      // Placeholder for ElevenLabs integration
-      isPlaying.value = !isPlaying.value;
+    const toggleAudio = async () => {
+      if (!audioElement.value) {
+        // First time - load the audio
+        try {
+          const response = await api(`/tts/${currentModule.value.id}`);
+          audioElement.value = new Audio(response.audioUrl);
+          audioElement.value.onended = () => { isPlaying.value = false; };
+          audioElement.value.onerror = () => { 
+            isPlaying.value = false;
+            alert('Audio playback error. Try again.');
+          };
+        } catch (error) {
+          alert('🔊 Audio not available: ' + (error.message || 'TTS not configured'));
+          return;
+        }
+      }
+
       if (isPlaying.value) {
-        alert('🔊 Audio narration will be implemented with ElevenLabs TTS!');
+        audioElement.value.pause();
         isPlaying.value = false;
+      } else {
+        audioElement.value.play();
+        isPlaying.value = true;
       }
     };
 
@@ -583,12 +607,60 @@ createApp({
       }
     };
 
+    // Final Exam methods
+    const checkExamEligibility = async () => {
+      try {
+        const data = await api('/exam/eligibility');
+        examEligible.value = data.eligible;
+      } catch (error) {
+        console.error('Failed to check exam eligibility:', error);
+      }
+    };
+
+    const startExam = async () => {
+      try {
+        const questions = await api('/exam/questions');
+        examQuestions.value = questions;
+        examAnswers.value = new Array(questions.length).fill('');
+        currentView.value = 'exam';
+      } catch (error) {
+        alert('Failed to load exam: ' + error.message);
+      }
+    };
+
+    const submitExam = async () => {
+      const answers = examQuestions.value.map((q, i) => ({
+        questionId: q.id,
+        type: q.type,
+        userAnswer: examAnswers.value[i] || ''
+      }));
+
+      try {
+        const result = await api('/exam/submit', {
+          method: 'POST',
+          body: JSON.stringify({ answers })
+        });
+        examResults.value = result;
+        showExamResults.value = true;
+      } catch (error) {
+        alert('Failed to submit exam: ' + error.message);
+      }
+    };
+
+    const closeExamResults = () => {
+      showExamResults.value = false;
+      currentView.value = 'dashboard';
+      examQuestions.value = [];
+      examAnswers.value = [];
+    };
+
     // Initialize
     onMounted(async () => {
       if (token.value) {
         try {
           user.value = await api('/auth/me');
           await loadProgress();
+          await checkExamEligibility();
           if (user.value.role === 'admin') {
             await loadAdminData();
           }
@@ -620,6 +692,11 @@ createApp({
       isPlaying,
       students,
       adminStats,
+      examEligible,
+      examQuestions,
+      examAnswers,
+      showExamResults,
+      examResults,
       login,
       logout,
       getModuleProgress,
@@ -630,7 +707,10 @@ createApp({
       submitQuiz,
       toggleAudio,
       viewStudentProgress,
-      resetStudentProgress
+      resetStudentProgress,
+      startExam,
+      submitExam,
+      closeExamResults
     };
   }
 }).mount('#app');

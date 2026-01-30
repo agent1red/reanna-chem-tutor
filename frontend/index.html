@@ -197,18 +197,97 @@
 
         <!-- Final Exam -->
         <div class="mt-8 bg-gradient-to-r from-primary to-secondary rounded-3xl shadow-xl p-8 text-white">
-          <div class="flex items-center justify-between">
+          <div class="flex items-center justify-between flex-wrap gap-4">
             <div>
               <h2 class="text-2xl font-bold mb-2">🎓 Final Exam</h2>
-              <p class="opacity-90">Complete all modules to unlock the final exam!</p>
+              <p class="opacity-90">{{ examEligible ? '20 questions covering all modules. Score 70% to pass!' : 'Complete all modules to unlock the final exam!' }}</p>
             </div>
             <button 
-              :disabled="overallProgress < 100"
-              :class="overallProgress >= 100 ? 'bg-white text-primary hover:scale-105' : 'bg-white/30 cursor-not-allowed'"
+              @click="startExam"
+              :disabled="!examEligible"
+              :class="examEligible ? 'bg-white text-primary hover:scale-105' : 'bg-white/30 cursor-not-allowed'"
               class="px-8 py-4 rounded-xl font-bold transition transform"
             >
-              {{ overallProgress >= 100 ? 'Take Exam 🚀' : '🔒 Locked' }}
+              {{ examEligible ? 'Take Exam 🚀' : '🔒 Locked' }}
             </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Final Exam View -->
+      <div v-else-if="currentView === 'exam'" class="max-w-4xl mx-auto p-6">
+        <div class="bg-white rounded-3xl shadow-xl overflow-hidden">
+          <!-- Exam Header -->
+          <div class="bg-gradient-to-r from-primary to-secondary p-8 text-white">
+            <h1 class="text-3xl font-bold">🎓 Final Exam</h1>
+            <p class="opacity-90 mt-2">20 Questions • No Time Limit • 70% to Pass</p>
+          </div>
+
+          <!-- Exam Questions -->
+          <div class="p-8">
+            <div class="space-y-8">
+              <div 
+                v-for="(question, index) in examQuestions" 
+                :key="question.id"
+                class="bg-gray-50 rounded-2xl p-6"
+              >
+                <div class="flex items-start gap-4">
+                  <span class="bg-primary text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0">
+                    {{ index + 1 }}
+                  </span>
+                  <div class="flex-1">
+                    <p class="font-semibold mb-4">{{ question.question }}</p>
+                    <span class="text-xs px-2 py-1 rounded-full bg-gray-200 text-gray-600 mb-3 inline-block">
+                      {{ question.module.replace('-', ' ').replace('sig figs', 'Sig Figs').replace('matter atoms', 'Matter & Atoms').replace('lab skills', 'Lab Skills') }}
+                    </span>
+                    
+                    <!-- Multiple Choice -->
+                    <div v-if="question.type === 'multiple-choice'" class="space-y-2 mt-3">
+                      <label 
+                        v-for="(option, optIndex) in question.options" 
+                        :key="optIndex"
+                        class="flex items-center p-3 rounded-xl border-2 cursor-pointer hover:border-primary transition"
+                        :class="examAnswers[index] === option ? 'border-primary bg-purple-50' : 'border-gray-200'"
+                      >
+                        <input 
+                          type="radio" 
+                          :name="'exam-q' + index" 
+                          :value="option"
+                          v-model="examAnswers[index]"
+                          class="mr-3"
+                        >
+                        {{ option }}
+                      </label>
+                    </div>
+                    
+                    <!-- Fill in the blank -->
+                    <div v-else class="mt-3">
+                      <input 
+                        v-model="examAnswers[index]"
+                        type="text"
+                        class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-primary focus:outline-none"
+                        placeholder="Your answer..."
+                      >
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="mt-8 flex gap-4">
+              <button 
+                @click="currentView = 'dashboard'"
+                class="flex-1 py-4 bg-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-300 transition"
+              >
+                ← Save & Exit
+              </button>
+              <button 
+                @click="submitExam"
+                class="flex-1 py-4 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-xl hover:opacity-90 transition"
+              >
+                Submit Exam 🎯
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -452,6 +531,45 @@
           class="w-full py-3 bg-primary text-white font-bold rounded-xl hover:opacity-90 transition"
         >
           {{ quizResults.passed ? 'Continue' : 'Try Again' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Final Exam Results Modal -->
+    <div v-if="showExamResults" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-2xl w-full my-8">
+        <div class="text-center">
+          <div class="text-6xl mb-4">{{ examResults.passed ? '🎓' : '📖' }}</div>
+          <h2 class="text-3xl font-bold mb-2">
+            {{ examResults.passed ? 'Congratulations!' : 'Keep Studying!' }}
+          </h2>
+          <div class="text-6xl font-bold my-6" :class="examResults.passed ? 'text-success' : 'text-warning'">
+            {{ examResults.score }}%
+          </div>
+          <p class="text-gray-500 mb-6">
+            You got {{ examResults.correctCount }} out of {{ examResults.totalQuestions }} correct.
+            {{ examResults.passed ? '🎉 You passed the final exam!' : 'You need 70% to pass. Review the topics below and try again!' }}
+          </p>
+        </div>
+
+        <!-- Score breakdown by module -->
+        <div v-if="examResults.breakdown" class="mb-6">
+          <h3 class="font-bold mb-3">Score by Topic:</h3>
+          <div class="grid grid-cols-2 gap-3">
+            <div v-for="(data, module) in examResults.breakdown" :key="module" class="bg-gray-50 rounded-xl p-3">
+              <div class="text-sm text-gray-500">{{ module.replace('-', ' ') }}</div>
+              <div class="font-bold" :class="data.correct === data.total ? 'text-success' : data.correct >= data.total/2 ? 'text-warning' : 'text-danger'">
+                {{ data.correct }}/{{ data.total }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button 
+          @click="closeExamResults"
+          class="w-full py-4 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-xl hover:opacity-90 transition"
+        >
+          {{ examResults.passed ? 'Back to Dashboard 🏠' : 'Review & Try Again' }}
         </button>
       </div>
     </div>
